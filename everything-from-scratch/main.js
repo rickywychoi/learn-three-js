@@ -1,14 +1,29 @@
 function init() {
   var scene = new THREE.Scene();
+  var gui = new dat.GUI();
+
+  var enableFog = false;
+
+  if (enableFog) {
+    scene.fog = new THREE.FogExp2(0xffffff, 0.2);
+  }
 
   var box = getBox(1, 1, 1);
-  var plane = getPlane(4);
+  var plane = getPlane(20);
+  var pointLight = getPointLight(1);
+  var sphere = getSphere(0.05);
+
+  plane.name = "plane-1";
 
   box.position.y = box.geometry.parameters.height / 2;
   plane.rotation.x = Math.PI / 2;
+  pointLight.position.y = 2;
+  pointLight.intensity = 2;
 
   scene.add(box);
   scene.add(plane);
+  pointLight.add(sphere);
+  scene.add(pointLight);
 
   var camera = new THREE.PerspectiveCamera(
     45,
@@ -22,16 +37,37 @@ function init() {
 
   camera.lookAt(new THREE.Vector3(0, 0, 0));
 
+  (() => {
+    gui.add(pointLight, "intensity", 0, 10);
+    gui.add(pointLight.position, "y", 0, 5);
+    gui.add(camera.position, "x", -10, 10);
+    gui.add(camera.position, "y", -10, 10);
+    gui.add(camera.position, "z", -10, 10);
+  })();
+
   var renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor("#787878");
   document.getElementById("webgl").appendChild(renderer.domElement);
-  renderer.render(scene, camera);
+  update(renderer, scene, camera);
+
+  return scene;
 }
 
 function getBox(w, h, d) {
   var geometry = new THREE.BoxGeometry(w, h, d);
+  var material = new THREE.MeshPhongMaterial({
+    color: 0x787878,
+  });
+  var mesh = new THREE.Mesh(geometry, material);
+
+  return mesh;
+}
+
+function getSphere(size) {
+  var geometry = new THREE.SphereGeometry(size, 24, 24);
   var material = new THREE.MeshBasicMaterial({
-    color: 0x00ff00,
+    color: 0xffffff,
   });
   var mesh = new THREE.Mesh(geometry, material);
 
@@ -40,7 +76,7 @@ function getBox(w, h, d) {
 
 function getPlane(size) {
   var geometry = new THREE.PlaneGeometry(size, size);
-  var material = new THREE.MeshBasicMaterial({
+  var material = new THREE.MeshPhongMaterial({
     color: 0xff0000,
     side: THREE.DoubleSide,
   });
@@ -49,4 +85,27 @@ function getPlane(size) {
   return mesh;
 }
 
-init();
+function getPointLight(intensity) {
+  var light = new THREE.PointLight("#fff", intensity);
+  return light;
+}
+
+function update(renderer, scene, camera) {
+  renderer.render(scene, camera);
+
+  var plane = scene.getObjectByName("plane-1");
+
+  (() => {
+    // plane.position.x += 0.001;
+    // plane.position.y += 0.001;
+    // plane.position.z += 0.001;
+  })();
+
+  requestAnimationFrame(function () {
+    update(renderer, scene, camera);
+  });
+}
+
+var scene = init();
+
+console.log(scene);
